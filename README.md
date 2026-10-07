@@ -44,6 +44,21 @@ It is deliberately two-tier, so a year of daily chat stays fast and cheap:
 The **master prompt** is short and stable; the live date/goals/facts/summary/tasks are
 assembled into a separate context block on each call. Preview it in Settings.
 
+## What the coach can do (capabilities)
+The master prompt is short and static; the live date/goals/facts/summary/tasks are assembled
+separately, so context starts lean. In any reply the coach can drive the app via one JSON block:
+- **brief** — the morning brief (today's focus, this week, the north star).
+- **tasks** — add or update today's tasks (matched by title), mark them **completed**, or **drop** them.
+- **goals** — long-term outcomes with progress 0–100 and an optional **horizon** ("this week",
+  "this month") so it plans across timelines without asking you to.
+- **facts** — durable memory: people, decisions, commitments, constraints (max 3/reply).
+- **feeds** — suggest a public RSS feed; it appears in Settings → News feeds for you to read.
+- **reroute** — a one-line course-correction when effort drifts from goals.
+
+It knows today's date; recent and retrieved messages are date-labelled, and the rolling summary
+keeps the long arc with dates — so it can reason about what happened and when, including
+"what did I finish last week".
+
 ## Models & automatic fallback
 Gemini sometimes returns `503` when a model is overloaded. Moeware doesn't stop — it walks
 down a tier list (`gemini-3.8-flash → 3.7 → 3.6 → 3.5 → 3.5-flash-lite → 3.1-pro` by default)

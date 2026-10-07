@@ -74,6 +74,8 @@ async function loadState(){
   MSGS = (await idb.all('messages')).sort((a,b)=>a.ts-b.ts);
   MSGS.forEach(m=>{ m._low = m.text.toLowerCase(); });
   TASKS = await idb.all('tasks');
+  const stale = TASKS.filter(t=>t.day!==today());
+  for(const t of stale) idb.del('tasks',t.id);   // tidy yesterday's leftovers
   TASKS = TASKS.filter(t=>t.day===today());
   const sums = await idb.all('summaries');
   SUMMARY = sums.sort((a,b)=>b.ts-a.ts)[0] || null;
@@ -111,30 +113,41 @@ async function addFact(f){
 /* ==========================================================================
    4. Prompt (short master + separately assembled context)
    ========================================================================== */
-const PERSONA = `You are Moeware — a warm, blunt, AuDHD-friendly executive coach and ruthless prioritizer for the CEO of a boutique software agency.
+const PERSONA = `You are Moeware, the back-of-house brain for a founder building a boutique software company with one partner. Your job is to do all the heavy reasoning so the day feels simple.
 
-Rules:
-- Be brief and human. No fluff, no lists of ten. Reduce choice overload.
-- Lead with the single most important thing, then at most two more.
-- Every task maps to a goal or is labeled MAINTENANCE.
-- If effort drifts from goals, propose one small reroute that keeps the prize in view.
-- Never invent names, people, or dates. If something important is missing, ask one crisp question.
+WHO THEY ARE: an AuDHD CEO-founder. Choice overload shuts them down. They want to open the app in the morning, talk for a minute, and be told the few things that matter. They drop in updates whenever ("I shipped X", "a new thing came up", "I'm stuck on Y").
 
-You also run the app. Whenever you change the plan, goals, or memory, end your reply with ONE fenced json block, containing only the keys you are changing:
+HOW TO BEHAVE:
+- Warm, blunt, brief. Short sentences. No fluff, no menus of options.
+- Lead with the ONE next action, then at most two more. Never more than 3 priorities.
+- Reason across timelines: today, this week/next, and the long-term north star. Say what matters now for each.
+- Do the planning silently; the reply stays short and human.
+- If effort drifts from goals, name it plainly and offer one small reroute that keeps the prize in view.
+- Never invent names, people, dates, or numbers. If something important is missing, ask exactly one crisp question.
+
+WHAT YOU CONTROL: You run the app. Write your short human reply FIRST, then ONE fenced json block containing only the keys you are changing:
 \`\`\`json
-{"brief":"","tasks":[{"title":"","score":8,"goal":"","why":""}],"goals":[{"title":"","progress":50}],"facts":[""],"reroute":""}
+{"brief":"","tasks":[{"title":"","score":8,"goal":"","why":"","done":false}],"completed":["task title"],"drop":["task title"],"goals":[{"title":"","progress":50,"horizon":""}],"facts":[""],"feeds":[{"name":"","url":""}],"reroute":""}
 \`\`\`
-Always write the short human reply ABOVE the block.`;
+- brief: today's morning brief, a few sentences.
+- tasks: add or update today's tasks (matched by title). completed marks those tasks done; drop removes them.
+- goals: long-term outcomes with progress 0-100 and an optional horizon ("this week", "this month", "this quarter"). Use horizon to plan across timelines.
+- facts: durable things worth remembering for a year — people, decisions, commitments, constraints. At most 3 per reply, no trivia.
+- feeds: suggest a public RSS feed worth following (name + https URL).
+Only include the keys you are changing.`;
+
 
 function contextBlock(mode){
   const p=[];
   p.push(`DATE: ${today()} (${new Date().toLocaleDateString(undefined,{weekday:'long'})})`);
   if(S.profile) p.push(`PROFILE: ${S.profile}`);
-  if(S.goals.length) p.push('GOALS:\n'+S.goals.map(g=>`- ${g.title} [${g.progress||0}%]${g.note?' — '+g.note:''}`).join('\n'));
+  if(S.goals.length) p.push('GOALS (with horizon):\n'+S.goals.map(g=>`- ${g.title} [${g.progress||0}%]${g.horizon?' · '+g.horizon:''}${g.note?' — '+g.note:''}`).join('\n'));
   if(S.facts.length) p.push('DURABLE MEMORY:\n'+S.facts.map(f=>'- '+f).join('\n'));
-  if(SUMMARY?.text) p.push('LONG-TERM SUMMARY (compressed history):\n'+SUMMARY.text.slice(0,1500));
+  if(SUMMARY?.text) p.push('LONG-TERM SUMMARY (compressed history):\n'+SUMMARY.text.slice(0,1400));
   const open=TASKS.filter(t=>!t.done);
+  const done=TASKS.filter(t=>t.done);
   p.push("TODAY'S OPEN TASKS:\n"+(open.length?open.map(t=>`- ${t.title} (${t.score||''}⚡${t.goal?' · '+t.goal:''})`).join('\n'):'(none yet)'));
+  if(done.length) p.push('DONE TODAY: '+done.map(t=>t.title).join('; '));
   p.push('MODE: '+mode);
   return p.join('\n\n');
 }
@@ -183,7 +196,7 @@ async function ask(mode, prompt, opts){
   const recalled = mode==='summarize' ? '' : await recall(prompt||'');
   const ctx = contextBlock(mode) + (recalled ? '\n\nRELEVANT FROM ARCHIVE:\n'+recalled : '');
   const systemText = PERSONA+'\n\n---\n'+ctx;
-  const contents = MSGS.slice(-RECENT).map(m=>({ role: m.role==='me'?'user':'model', parts:[{text:m.text}] }));
+  const contents = MSGS.slice(-RECENT).map(m=>({ role: m.role==='me'?'user':'model', parts:[{text: (m.day!==today()?`[${m.day}] `:'')+m.text }] }));
   if(prompt && append) contents.push({ role:'user', parts:[{text:prompt}] });
 
   const chain=chainModels();
@@ -213,26 +226,70 @@ function parseBlock(txt){
 }
 async function applyAction(a){
   if(!a) return;
-  if(Array.isArray(a.tasks)) await setTasks(a.tasks);
+  if(Array.isArray(a.tasks)) await upsertTasks(a.tasks);
+  if(Array.isArray(a.completed)) await markCompleted(a.completed);
+  if(Array.isArray(a.drop)) await dropTasks(a.drop);
   if(Array.isArray(a.goals)){
     for(const g of a.goals){
       const t=String(g.title||'').trim(); if(!t) continue;
       const f=S.goals.find(x=>x.title.toLowerCase()===t.toLowerCase());
-      if(f){ if(g.progress!=null) f.progress=Math.max(0,Math.min(100,+g.progress)); if(g.note!=null) f.note=g.note; }
-      else S.goals.push({ title:t, progress:g.progress||0, note:g.note||'' });
+      if(f){
+        if(g.progress!=null) f.progress=Math.max(0,Math.min(100,+g.progress));
+        if(g.note!=null) f.note=g.note;
+        if(g.horizon!=null) f.horizon=g.horizon;
+      } else S.goals.push({ title:t, progress:g.progress||0, note:g.note||'', horizon:g.horizon||'' });
     }
     await saveState();
   }
   if(Array.isArray(a.facts)) for(const f of a.facts) await addFact(f);
+  if(Array.isArray(a.feeds)) await addFeeds(a.feeds);
   if(a.brief){ S.brief={ day:today(), text:String(a.brief) }; await saveState(); }
   renderFacts(); renderGoals();
 }
-async function setTasks(list){
-  await idb.clear('tasks');
-  TASKS = list.map(t=>({ id:uid(), day:today(), title:String(t.title||'').trim(), score:+t.score||5, goal:t.goal||'', why:t.why||'', done:false }))
-               .filter(t=>t.title);
-  for(const t of TASKS) await idb.put('tasks',t);
+// Add or update today's tasks, matched by title (never wipes the rest by accident).
+async function upsertTasks(list){
+  for(const t of list){
+    const title=String(t.title||'').trim(); if(!title) continue;
+    const ex=TASKS.find(x=>x.title.toLowerCase()===title.toLowerCase());
+    if(ex){
+      if(t.score!=null) ex.score=+t.score||0;
+      if(t.goal!=null) ex.goal=t.goal;
+      if(t.why!=null) ex.why=t.why;
+      if(t.done!=null) ex.done=!!t.done;
+      await idb.put('tasks',ex);
+    } else {
+      const nt={ id:uid(), day:today(), title, score:+t.score||5, goal:t.goal||'', why:t.why||'', done:!!t.done };
+      TASKS.push(nt); await idb.put('tasks',nt);
+    }
+  }
   renderPlan();
+}
+async function markCompleted(titles){
+  let changed=false;
+  for(const raw of titles){
+    const title=String(raw||'').trim().toLowerCase(); if(!title) continue;
+    const t=TASKS.find(x=>x.title.toLowerCase()===title);
+    if(t && !t.done){ t.done=true; await idb.put('tasks',t); changed=true; }
+  }
+  if(changed) renderPlan();
+}
+async function dropTasks(titles){
+  for(const raw of titles){
+    const title=String(raw||'').trim().toLowerCase(); if(!title) continue;
+    const t=TASKS.find(x=>x.title.toLowerCase()===title);
+    if(t){ TASKS=TASKS.filter(x=>x.id!==t.id); await idb.del('tasks',t.id); }
+  }
+  renderPlan();
+}
+async function addFeeds(feeds){
+  let added=0;
+  for(const f of feeds){
+    const url=String(f.url||'').trim();
+    if(!/^https?:\/\//i.test(url)) continue;
+    if((S.feeds||[]).some(x=>x.url===url)) continue;
+    S.feeds.push({ name:String(f.name||url).trim(), url }); added++;
+  }
+  if(added){ await saveState(); renderFeeds(); toast(added===1?'Coach suggested a feed — see Settings.':`Coach suggested ${added} feeds — see Settings.`,4000); }
 }
 
 /* ==========================================================================
@@ -451,7 +508,7 @@ async function getBrief(){
   const b=$('briefBtn'); if(b){ b.disabled=true; b.textContent='Thinking…'; }
   try{
     const raw=await ask('brief', `It's ${new Date().toLocaleDateString(undefined,{weekday:'long'})} morning. Set up my day.
-Give me a two-sentence brief in your voice, then a plan of no more than 4 needle-moving tasks (rank 1-10, mapped to a goal or MAINTENANCE). End with the json block including "brief" and "tasks".`);
+Write a short morning brief (2-4 sentences) in your voice: what today is for, where we are this week, and the long-term north star in one line. Then no more than 4 needle-moving tasks for today (rank 1-10, each mapped to a goal or MAINTENANCE). End with the json block including "brief" and "tasks".`);
     const {text,data}=parseBlock(raw);
     if(data){ await applyAction(data); }
     else if(text){ S.brief={day:today(),text}; await saveState(); }
@@ -519,7 +576,7 @@ function renderGoals(){
   const ul=$('goalList'); ul.innerHTML='';
   S.goals.forEach((g,i)=>{
     const li=document.createElement('li');
-    li.innerHTML=`<div class="task-main"><strong>${esc(g.title)}</strong> <span class="pill">${g.progress||0}%</span>
+    li.innerHTML=`<div class="task-main"><strong>${esc(g.title)}</strong> <span class="pill">${g.progress||0}%</span>${g.horizon?` <span class="pill">${esc(g.horizon)}</span>`:''}
         <input type="range" min="0" max="100" value="${g.progress||0}">
       </div><button class="icon" data-g="${i}">✕</button>`;
     li.querySelector('input').onchange=async e=>{ g.progress=+e.target.value; await saveState(); renderGoals(); };
