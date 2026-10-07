@@ -1,44 +1,92 @@
 # Moeware — private daily coach (PWA)
 
-A calm, Japandi-styled planner that ranks your day, tracks long-term goals, and doubles as a coach. Built for an AuDHD CEO who wants the heavy thinking done in the background.
+A calm, Japandi-styled coach you can talk to every day. It ranks your day, keeps
+long-term goals, and remembers the long arc — all on-device. Built for an AuDHD CEO
+who wants the heavy thinking done in the background.
 
-Local-first. Your Gemini key and all data stay in your phone's browser (localStorage). Nothing is committed to git.
+Local-first. Your Gemini key and all data stay in your phone's browser. Nothing is
+committed to git.
+
+## Three screens
+- **Chat** — the home. A morning brief, your inline plan cards, and the conversation.
+  The coach writes the plan, updates goals, and manages memory behind the scenes.
+- **News** — a generic public Hacker News front page plus your RSS feeds, read
+  **directly from the source**. Nothing here is built from your goals, chats, or memory,
+  and no third-party proxy is used unless you explicitly enable one in Settings.
+- **Settings** — connection, project context, goals, durable memory, feeds,
+  history search, backups, and a live master-prompt preview.
 
 ## Where the API key goes (read this)
-
-**Do not put the key in the code.** This is a static site — anything in the files is visible to anyone who can open the page, and the deployed GitHub Pages URL is not truly private. Instead:
-
+**Do not put the key in the code.** This is a static site — anything in the files is
+visible to anyone who can open the page, and a deployed URL is not truly private.
 1. Get a key at https://aistudio.google.com/apikey
-2. Open the app → **Setup** tab → paste it into **Gemini API key** → **Save**.
-3. It is stored only in that browser's localStorage on that device. It is sent only to Google, only when you use the coach.
+2. Open the app → **Settings** → paste it into **Gemini API key** → **Save**.
+3. It is stored only in that browser and sent only to Google, only when you use the coach.
 
-That's it. No file editing, no rebuild. (If you ever see a `Setup` banner on the Today tab, you haven't saved a key yet.)
+If you see a setup banner on Chat, you haven't saved a key yet.
 
-**Model note:** the current Flash model is `gemini-3.8-flash` (default). Free-key fallbacks: `gemini-3.7-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-2.5-flash`, `gemini-2.5-flash-lite`. The Model field is editable — type any model name you have access to.
+## Memory model (built for a year)
+It is deliberately two-tier, so a year of daily chat stays fast and cheap:
+- **Archive (IndexedDB)** — every message, forever, searchable in
+  Settings → *Search all history*. Stored locally, never sent wholesale to the model.
+- **Working memory** what actually goes into each prompt:
+  - **Durable facts** you or the coach curate (Settings → *Durable memory*).
+  - **Rolling summary** — once ~40 messages pile up, the coach compresses the oldest
+    ones into a short factual summary. Raw messages are then marked covered but **kept**.
+  - **Recent transcript** — the last ~14 messages.
+  - **Retrieval** — a local keyword search always runs; when *Semantic memory* is enabled
+    (Settings), a small embedding model (`all-MiniLM-L6-v2` via transformers.js) also
+    searches the whole archive **by meaning**. The model runs on-device; only the one-time
+    ~23 MB download touches the network, and it's browser-cached for offline use. Vectors
+    are stored in IndexedDB (`vectors` store) and older messages are indexed in the
+    background. Embeddings never leave the device.
+
+The **master prompt** is short and stable; the live date/goals/facts/summary/tasks are
+assembled into a separate context block on each call. Preview it in Settings.
+
+## Models & automatic fallback
+Gemini sometimes returns `503` when a model is overloaded. Moeware doesn't stop — it walks
+down a tier list (`gemini-3.8-flash → 3.7 → 3.6 → 3.5 → 3.5-flash-lite → 3.1-pro` by default)
+until one answers, briefly skips the overloaded primary, and shows the model it actually used
+in a small line **above the chat** (`via gemini-3.6-flash · fallback`). Edit the order in
+**Settings → Auto-fallback chain** (comma-separated). A failed message gets a **Retry** button.
 
 ## Run locally
 ```bash
 python3 -m http.server 8000
 # open http://localhost:8000
 ```
-Opening `index.html` directly works too; a server is better for installing the PWA.
+A server is required now (IndexedDB + service worker). Opening the file directly won't work.
 
-## Free private-ish hosting
-1. Push to a **private** GitHub repo.
-2. Settings → Pages → Deploy from branch → `main` / root.
-   - Free GitHub Pages serves the *code* publicly (obscure URL). That is fine here because **no data or key lives on the server** — they live in your phone's localStorage. Never commit the key.
-3. Phone: Share → Add to Home Screen (iOS) or ⋮ → Install app (Android).
-4. Open the app → **Setup** → paste key → add goals in **Goals**.
+## Put it on your phone
+1. Push to GitHub. (A **private** repo needs GitHub Pro/Team for Pages; otherwise the
+   Pages URL is public-but-obscure — which is fine, since no key or data is on the server.)
+2. Repo → Settings → Pages → Deploy from branch → `main` / root.
+3. On your phone, open the Pages URL, then:
+   - **iOS:** Share → Add to Home Screen.
+   - **Android:** ⋮ → Install app.
+4. Open the installed app → **Settings** → add your key → set a goal or two.
+5. Optional: enable **Semantic memory** in Settings (one-time ~23 MB model download,
+   then on-device/offline). If it can't load, the app silently falls back to keyword search.
 
-For a truly access-controlled URL, drop the same files on Cloudflare Pages (free) with Access, or Vercel with password.
-
-## How it maps to the brief
-- **Daily check-in:** brain dump → coach ranks by needle-moving (1–10), maps each to a goal, shows the Top 3 first.
-- **Long-term tracking + reroute:** Close day → coach updates goal % and proposes a reroute; memory is auto-pruned to the newest 20 facts.
-- **News:** plain JavaScript only — searches built from your goals, fetched from Hacker News and Open Library, plus a YouTube search link. No LLM in the fetch path.
-- **Master prompt:** rebuilt on every call from local date + project context + goals with % + progress + lean memory. Live preview in Setup.
-- **Conversational:** Coach tab is quick chat; the deep reasoning lives in the master prompt.
+## Will it auto-update from the repo?
+Mostly yes. The service worker is **network-first**: when you're online it fetches the
+latest files, and only falls back to its cache offline. So a pushed change shows up.
+- When an update is installed you'll see **"Update ready — tap to reload"** — tap it.
+- If you ever see a stale version, force it: close the app fully and reopen, or
+  reload twice. On iOS you can also delete and re-add the Home Screen icon.
+- Bump `CACHE` in `sw.js` only if you want to force every device to drop old caches.
 
 ## Privacy
-- Export a backup anytime (Setup → Data → Export). Wipe the device anytime.
-- If you lose your phone, revoke the AI Studio key — data was only on-device.
+- Everything (messages, goals, facts, key, embeddings) lives in this browser's storage on this device.
+- **What leaves the device:** only what's required to (a) get a reply from Google's Gemini
+  when you use the coach, and (b) download the embedding model once (if enabled). Your
+  goals, chats, and memory are **not** sent anywhere else.
+- **News is unpersonalized.** Feeds are fetched directly; the front page is a public,
+  query-free request. The optional feed proxy (Settings) is **off by default** — enabling
+  it sends the feed URL to `allorigins.win`.
+- Export a full backup anytime (Settings → Data → Export). Import restores it.
+- Lost phone? Revoke the AI Studio key. The data was only on that device.
+
+> If you want *zero* data leaving — no Gemini — the app would need a local LLM (e.g. WebLLM),
+> which is slower and heavier on a phone. Say the word and I can add it as an option.
