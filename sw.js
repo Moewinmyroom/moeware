@@ -1,5 +1,5 @@
 // Moeware service worker — network-first so updates land, cache as offline fallback.
-const CACHE = 'moeware-v2';
+const CACHE = 'moeware-v3';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
@@ -25,14 +25,18 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
 
-  // App shell: network-first, fall back to cache (and index.html for navigations).
+  // App shell: network-first, but fall back to the installed copy if the
+  // network fails OR the host returns an error (e.g. the site was taken down).
   if (sameOrigin) {
     e.respondWith((async () => {
       try {
         const fresh = await fetch(req);
-        const c = await caches.open(CACHE);
-        c.put(req, fresh.clone());
-        return fresh;
+        if (fresh && fresh.ok) {
+          const c = await caches.open(CACHE);
+          c.put(req, fresh.clone());
+          return fresh;
+        }
+        throw new Error('bad status ' + (fresh && fresh.status));
       } catch {
         const cached = await caches.match(req);
         if (cached) return cached;
@@ -45,3 +49,4 @@ self.addEventListener('fetch', (e) => {
 
   // Cross-origin (Gemini, news feeds): straight to network, never cached.
 });
+
