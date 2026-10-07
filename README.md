@@ -14,7 +14,7 @@ Local-first. Your Gemini key and all data stay in your phone's browser (localSto
 
 That's it. No file editing, no rebuild. (If you ever see a `Setup` banner on the Today tab, you haven't saved a key yet.)
 
-**Model note:** there is no `gemini-3.8-flash`. The free key works with e.g. `gemini-2.5-flash` (default), `gemini-2.5-flash-lite` (cheapest), `gemini-2.0-flash`, `gemini-2.5-pro`. The Model field is editable — type any model name you have access to.
+**Model note:** the current Flash model is `gemini-3.8-flash` (default). Free-key fallbacks: `gemini-3.7-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-2.5-flash`, `gemini-2.5-flash-lite`. The Model field is editable — type any model name you have access to.
 
 ## Run locally
 ```bash

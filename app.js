@@ -1,7 +1,7 @@
 // Moeware — local-first private coach
 // Storage: localStorage only. The key never leaves this device except to Google.
 const LS = 'moeware_v1';
-const S = load() || { apiKey:'', model:'gemini-2.5-flash', profile:'', goals:[], tasks:[], logs:[], memory:[], chat:[] };
+const S = load() || { apiKey:'', model:'gemini-3.8-flash', profile:'', goals:[], tasks:[], logs:[], memory:[], chat:[] };
 
 function load(){ try{ return JSON.parse(localStorage.getItem(LS)); }catch{ return null; } }
 function save(){ localStorage.setItem(LS, JSON.stringify(S)); renderAll(); }
