@@ -1,15 +1,15 @@
-// Moeware service worker — network-first so updates land, cache as offline fallback.
-const CACHE = 'moeware-v3';
-const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png'];
+// Coach service worker — network-first, with an offline app shell.
+const CACHE = 'coach-v4';
+const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    await Promise.all(keys.filter((k) => /^(moeware-|coach-)/.test(k) && k !== CACHE).map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -33,7 +33,7 @@ self.addEventListener('fetch', (e) => {
         const fresh = await fetch(req);
         if (fresh && fresh.ok) {
           const c = await caches.open(CACHE);
-          c.put(req, fresh.clone());
+          if(SHELL.some(path=>new URL(path,self.location.href).pathname===url.pathname)) await c.put(req, fresh.clone());
           return fresh;
         }
         throw new Error('bad status ' + (fresh && fresh.status));

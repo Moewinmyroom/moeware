@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Moeware</title>
+<title>Coach — in your corner</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<meta name="theme-color" content="#F2EEE6">
+<meta name="theme-color" content="#f7f5fb">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Moeware">
+<meta name="apple-mobile-web-app-title" content="Coach">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="topbar">
   <div class="topbar-inner">
-    <div class="brand">Moeware</div>
+    <a class="brand" href="#" aria-label="Coach home"><span class="brand-mark">c<span>✦</span></span><span>Coach<span class="brand-note">in your corner</span></span></a>
     <button id="newsRefresh" class="ghost-small" hidden>Refresh</button>
   </div>
 </header>
@@ -30,21 +30,30 @@
 
   <!-- ======= HOME / CHAT ======= -->
   <section id="tab-home" class="tab active">
+    <div class="page-heading"><p class="eyebrow">Your space to figure it out</p><h1>A little clarity.<br>A lot of <em>you’ve got this.</em></h1></div>
+    <div id="welcome" class="welcome card">
+      <span class="welcome-spark">✦</span><h2>Hey girl hey 💅</h2>
+      <p>Big plans, messy days, tiny wins. Bring all of it.</p><p class="muted">We’ll find your next move together.</p>
+      <div class="starters"><button data-starter="I'm overwhelmed. Can we talk it through?">Untangle my thoughts</button><button data-starter="Help me figure out what matters today.">Find my focus</button><button data-starter="I have a win to share!">Share a win</button></div>
+    </div>
     <div id="brief" class="focus-card" hidden></div>
     <div id="plan" class="card" hidden></div>
     <div id="modelLine" class="model-line" hidden></div>
-    <div id="chat" class="chat" aria-live="polite"></div>
+    <div id="chat" class="chat" role="log" aria-label="Conversation with Coach" aria-live="polite"></div>
   </section>
 
   <!-- ======= NEWS ======= -->
   <section id="tab-news" class="tab">
+    <div class="page-heading">
+      <p class="eyebrow">A little food for thought</p>
+      <h1>The reading room.</h1>
+      <p class="muted">A few worthwhile reads across your interests. Less noise, more curiosity.</p>
+    </div>
     <div class="card">
-      <p class="eyebrow">Signal</p>
-      <h2>Your world</h2>
-      <p class="muted">A plain public front page plus your RSS feeds, read straight from the source.
-        Nothing here is derived from your goals, chats, or memory.</p>
+      <h3>Follow your curiosity</h3>
+      <p class="muted">Based on the public topics you choose in Settings, plus your feeds. Your private conversations stay out of news searches.</p>
       <div class="row">
-        <input id="newsSearchInput" placeholder="Search Hacker News (opens a new tab)">
+        <input id="newsSearchInput" placeholder="Search Hacker News (opens a new tab)" aria-label="Search news">
         <button id="newsSearchBtn">Search</button>
       </div>
     </div>
@@ -53,9 +62,10 @@
 
   <!-- ======= SETTINGS ======= -->
   <section id="tab-settings" class="tab">
+    <div class="page-heading"><p class="eyebrow">Make yourself at home</p><h1>Your Coach, your way.</h1><p class="muted">A few preferences. A better fit.</p></div>
     <div class="card">
-      <p class="eyebrow">Setup</p>
-      <h2>Connection</h2>
+      <p class="eyebrow">Start here</p>
+      <h2>Connect your coach</h2>
       <label>Gemini API key
         <input id="apiKey" type="password" placeholder="AIza…" autocomplete="off">
       </label>
@@ -81,44 +91,59 @@
     </div>
 
     <div class="card">
-      <h3>You</h3>
-      <p class="muted">About you and the business — fed into every prompt so the coach has the why.</p>
-      <textarea id="profile" rows="4" placeholder="My partner and I are starting a software company. We're building … Our north star is … Biggest constraint right now is …"></textarea>
+      <h3>The person behind the plans</h3>
+      <p class="muted">What’s going on in your world? What do you want Coach to understand?</p>
+      <textarea id="profile" rows="4" aria-label="About you" placeholder="My partner and I are starting a software company. We're building … Our north star is … Biggest constraint right now is …"></textarea>
       <button id="saveProfile">Save context</button>
+    </div>
+
+    <div class="card">
+      <h3>A voice that feels like you</h3>
+      <p class="muted">Warm, playful, and honest by default. Add what makes it click for you.</p>
+      <label for="voice">Your preferences</label>
+      <textarea id="voice" rows="3" placeholder="More humor, less pep talk. Be gentle when I’m overwhelmed. Call me Taylor."></textarea>
+      <button id="saveVoice">Save preferences</button>
     </div>
 
     <div class="card">
       <h3>Goals</h3>
       <div class="row">
-        <input id="goalTitle" placeholder="e.g. Launch pilot with [Company]">
+        <input id="goalTitle" aria-label="New goal" placeholder="e.g. Launch pilot with [Company]">
         <button id="addGoal" class="primary">Add</button>
       </div>
       <ul id="goalList" class="list"></ul>
     </div>
 
     <div class="card">
-      <h3>Durable memory</h3>
-      <p class="muted">Facts the coach keeps. Editable; the raw history is never lost.</p>
+      <h3>The things worth remembering</h3>
+      <p class="muted">People, preferences, and commitments. Remove anything that no longer fits.</p>
       <ul id="factList" class="list"></ul>
       <div class="row">
-        <input id="factInput" placeholder="e.g. Pilot contact is Sarah">
+        <input id="factInput" aria-label="New memory" placeholder="e.g. Pilot contact is Sarah">
         <button id="addFact">Add</button>
       </div>
     </div>
 
     <div class="card">
       <h3>Semantic memory <span id="embedBadge" class="pill">off</span></h3>
-      <p class="muted">A local embedding model (≈23 MB, downloaded once) lets the coach search your whole
-        history by <em>meaning</em>, not just keywords. It runs entirely on this device — the one-time
-        model download is the only network use.</p>
+      <p class="muted">Search old conversations by <em>meaning</em>, so Coach can connect the dots.
+        A small model and runtime download first; your history is processed on this device.</p>
       <button id="embedToggle" class="primary">Enable semantic memory</button>
-      <p id="embedStatus" class="muted"></p>
+      <button id="embedRetry" hidden>Retry indexing</button>
+      <p id="embedStatus" class="muted" role="status"></p>
     </div>
 
     <div class="card">
       <h3>News feeds</h3>
+      <label>What are you curious about? <span class="muted">(up to six topics, comma-separated)</span><input id="newsInterests" placeholder="artificial intelligence, software, startups, design"></label>
+      <label>Less of this <span class="muted">(headline words to hide, comma-separated)</span><input id="excludedNews" placeholder="crypto, politics"></label>
+      <label for="readingTaste">What makes a good read for you?</label>
+      <textarea id="readingTaste" rows="3" placeholder="Practical ideas I can use, thoughtful design, and founder lessons. Skip the hype."></textarea>
+      <label class="check"><input id="curateNews" type="checkbox">Let Coach pick the strongest reads</label>
+      <p class="muted">With a connected AI key, Coach selects up to eight real headlines and explains the picks. This sends headlines and your reading preferences to Gemini; your private chats and goals stay out.</p>
+      <button id="saveNewsPreferences">Save reading interests</button>
       <p class="muted">One per line: <code>Name | https://feed-url</code>. Read directly from the source.</p>
-      <textarea id="feeds" rows="4" placeholder="Stratechery | https://stratechery.com/feed/"></textarea>
+      <textarea id="feeds" rows="4" aria-label="RSS feeds" placeholder="Stratechery | https://stratechery.com/feed/"></textarea>
       <button id="saveFeeds">Save feeds</button>
       <label class="check">
         <input type="checkbox" id="allowProxy">
@@ -134,7 +159,7 @@
     <details class="card disclosure">
       <summary>Search all history</summary>
       <div class="disclosure-body">
-        <div class="row"><input id="searchInput" placeholder="Search a year of conversations…"><button id="searchBtn" class="primary">Search</button></div>
+        <div class="row"><input id="searchInput" aria-label="Search conversation history" placeholder="Search a year of conversations…"><button id="searchBtn" class="primary">Search</button></div>
         <div id="searchOut" class="search-out"></div>
       </div>
     </details>
@@ -153,6 +178,8 @@
           <input id="importFile" type="file" accept="application/json" hidden>
           <button id="wipeBtn">Wipe this device</button>
         </div>
+        <label class="check"><input id="exportKey" type="checkbox">Include API key in backup (keep the file private)</label>
+        <p class="muted">Backups include your conversations and memories. Your API key stays out unless you choose to include it.</p>
       </div>
     </details>
   </section>
@@ -161,12 +188,13 @@
 <!-- ======= COMPOSER (home only) ======= -->
 <div id="composer" class="composer">
   <div class="composer-inner">
-    <textarea id="chatInput" rows="1" placeholder="What's on your mind?" autocomplete="off"></textarea>
+    <textarea id="chatInput" rows="1" placeholder="Okay, here’s the thing…" aria-label="Message Coach" autocomplete="off"></textarea>
     <button id="sendChat" class="primary" aria-label="Send">↑</button>
   </div>
 </div>
+<button id="newReply" class="new-reply" hidden>New reply ↓</button>
 
-<nav class="tabbar">
+<nav class="tabbar" aria-label="Main navigation">
   <button data-tab="home" class="active" aria-label="Chat">
     <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.5 9.5 0 0 1-3.3-.6L3 21l1.7-4.6A8.2 8.2 0 0 1 3 11.5a8.4 8.4 0 0 1 9-8.4 8.4 8.4 0 0 1 9 8.4z"/></svg>
     Chat
@@ -181,7 +209,7 @@
   </button>
 </nav>
 
-<div id="toast" class="toast"></div>
+<div id="toast" class="toast" role="status"></div>
 
 <script src="app.js"></script>
 </body>

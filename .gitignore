@@ -2,3 +2,4 @@
 Thumbs.db
 *.local.js
 .env
+/artifacts/

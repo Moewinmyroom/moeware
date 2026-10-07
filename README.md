@@ -1,107 +1,57 @@
-# Moeware — private daily coach (PWA)
+# Coach
 
-A calm, Japandi-styled coach you can talk to every day. It ranks your day, keeps
-long-term goals, and remembers the long arc — all on-device. Built for an AuDHD CEO
-who wants the heavy thinking done in the background.
+A private, local-first coach with a warm voice, a little humor, and honest accountability. A static PWA: no build step, server account, or analytics.
 
-Local-first. Your Gemini key and all data stay in your phone's browser. Nothing is
-committed to git.
+## Run
 
-## Three screens
-- **Chat** — the home. A morning brief, your inline plan cards, and the conversation.
-  The coach writes the plan, updates goals, and manages memory behind the scenes.
-- **News** — a generic public Hacker News front page plus your RSS feeds, read
-  **directly from the source**. Nothing here is built from your goals, chats, or memory,
-  and no third-party proxy is used unless you explicitly enable one in Settings.
-- **Settings** — connection, project context, goals, durable memory, feeds,
-  history search, backups, and a live master-prompt preview.
-
-## Where the API key goes (read this)
-**Do not put the key in the code.** This is a static site — anything in the files is
-visible to anyone who can open the page, and a deployed URL is not truly private.
-1. Get a key at https://aistudio.google.com/apikey
-2. Open the app → **Settings** → paste it into **Gemini API key** → **Save**.
-3. It is stored only in that browser and sent only to Google, only when you use the coach.
-
-If you see a setup banner on Chat, you haven't saved a key yet.
-
-## Memory model (built for a year)
-It is deliberately two-tier, so a year of daily chat stays fast and cheap:
-- **Archive (IndexedDB)** — every message, forever, searchable in
-  Settings → *Search all history*. Stored locally, never sent wholesale to the model.
-- **Working memory** what actually goes into each prompt:
-  - **Durable facts** you or the coach curate (Settings → *Durable memory*).
-  - **Rolling summary** — once ~40 messages pile up, the coach compresses the oldest
-    ones into a short factual summary. Raw messages are then marked covered but **kept**.
-  - **Recent transcript** — the last ~14 messages.
-  - **Retrieval** — a local keyword search always runs; when *Semantic memory* is enabled
-    (Settings), a small embedding model (`all-MiniLM-L6-v2` via transformers.js) also
-    searches the whole archive **by meaning**. The model runs on-device; only the one-time
-    ~23 MB download touches the network, and it's browser-cached for offline use. Vectors
-    are stored in IndexedDB (`vectors` store) and older messages are indexed in the
-    background. Embeddings never leave the device.
-
-The **master prompt** is short and stable; the live date/goals/facts/summary/tasks are
-assembled into a separate context block on each call. Preview it in Settings.
-
-## What the coach can do (capabilities)
-The master prompt is short and static; the live date/goals/facts/summary/tasks are assembled
-separately, so context starts lean. In any reply the coach can drive the app via one JSON block:
-- **brief** — the morning brief (today's focus, this week, the north star).
-- **tasks** — add or update today's tasks (matched by title), mark them **completed**, or **drop** them.
-- **goals** — long-term outcomes with progress 0–100 and an optional **horizon** ("this week",
-  "this month") so it plans across timelines without asking you to.
-- **facts** — durable memory: people, decisions, commitments, constraints (max 3/reply).
-- **feeds** — suggest a public RSS feed; it appears in Settings → News feeds for you to read.
-- **reroute** — a one-line course-correction when effort drifts from goals.
-
-It knows today's date; recent and retrieved messages are date-labelled, and the rolling summary
-keeps the long arc with dates — so it can reason about what happened and when, including
-"what did I finish last week".
-
-## Models & automatic fallback
-Gemini sometimes returns `503` when a model is overloaded. Moeware doesn't stop — it walks
-down a tier list (`gemini-3.8-flash → 3.7 → 3.6 → 3.5 → 3.5-flash-lite → 3.1-pro` by default)
-until one answers, briefly skips the overloaded primary, and shows the model it actually used
-in a small line **above the chat** (`via gemini-3.6-flash · fallback`). Edit the order in
-**Settings → Auto-fallback chain** (comma-separated). A failed message gets a **Retry** button.
-
-## Run locally
-```bash
-python3 -m http.server 8000
-# open http://localhost:8000
+```sh
+python -m http.server 8000
 ```
-A server is required now (IndexedDB + service worker). Opening the file directly won't work.
 
-## Put it on your phone
-1. Push to GitHub. (A **private** repo needs GitHub Pro/Team for Pages; otherwise the
-   Pages URL is public-but-obscure — which is fine, since no key or data is on the server.)
-2. Repo → Settings → Pages → Deploy from branch → `main` / root.
-3. On your phone, open the Pages URL, then:
-   - **iOS:** Share → Add to Home Screen.
-   - **Android:** ⋮ → Install app.
-4. Open the installed app → **Settings** → add your key → set a goal or two.
-5. Optional: enable **Semantic memory** in Settings (one-time ~23 MB model download,
-   then on-device/offline). If it can't load, the app silently falls back to keyword search.
+Open `http://localhost:8000`. Use HTTPS when hosting. In Settings, save your Gemini API key and add some context about yourself. The key stays in this browser and is sent to Google's Gemini API in a request header. Never put a key in the source code or commit a backup that includes one.
 
-## Will it auto-update from the repo?
-Mostly yes. The service worker is **network-first**: when you're online it fetches the
-latest files, and only falls back to its cache offline. So a pushed change shows up.
-- When an update is installed you'll see **"Update ready — tap to reload"** — tap it.
-- If you ever see a stale version, force it: close the app fully and reopen, or
-  reload twice. On iOS you can also delete and re-add the Home Screen icon.
-- Bump `CACHE` in `sw.js` only if you want to force every device to drop old caches.
+Install from your browser's Add to Home Screen / Install App menu. The installed app and manifest are named **Coach**. Existing installations may need to be reopened or reinstalled for the launcher name/icon to refresh. Their local database is intentionally still named `moeware`, so the rename preserves existing data on the same origin.
 
-## Privacy
-- Everything (messages, goals, facts, key, embeddings) lives in this browser's storage on this device.
-- **What leaves the device:** only what's required to (a) get a reply from Google's Gemini
-  when you use the coach, and (b) download the embedding model once (if enabled). Your
-  goals, chats, and memory are **not** sent anywhere else.
-- **News is unpersonalized.** Feeds are fetched directly; the front page is a public,
-  query-free request. The optional feed proxy (Settings) is **off by default** — enabling
-  it sends the feed URL to `allorigins.win`.
-- Export a full backup anytime (Settings → Data → Export). Import restores it.
-- Lost phone? Revoke the AI Studio key. The data was only on that device.
+## What changed
 
-> If you want *zero* data leaving — no Gemini — the app would need a local LLM (e.g. WebLLM),
-> which is slower and heavier on a phone. Say the word and I can add it as an option.
+- A cream and lilac interface, responsive navigation, accessible controls, conversation starters, and a quieter optional planning area.
+- Settings and News preserve independent scroll positions. Mobile viewport/keyboard changes adjust composer placement without scrolling the page. Replies follow the conversation only while you're following it; otherwise a New reply button appears.
+- Coach responds to what you say. Venting, questions, wins, and casual conversation no longer require a task recap. Daily planning is requested, never an automatic API call at launch. Add voice preferences in Settings.
+- Gemini receives native `update_coach` and `read_news` tool definitions. Changes are validated and saved in a transaction; replies show receipts. Tool responses preserve the model's thought signatures. Temporary failures can use the configured fallback chain, but a request that has already used tools is not replayed across models.
+- News searches selected public topics, checks headline relevance, filters unwanted words, deduplicates links, limits stories to the last 14 days, and balances categories. With editorial picks enabled and a connected key, Coach selects up to eight worthwhile reads from real candidates and explains its picks. Topic matching offers up to twelve stories without AI; fewer when matches are weak. AI discussion uses real headline links, not generated articles.
+- Local semantic memory indexes every saved message, updates its count continuously, deduplicates its queue, reports failures, supports retry, and respects pause. A downloaded model with no conversations shows an explanatory empty state. Imports rebuild vectors against the restored message IDs.
+- Task records survive day rollover and reflection. Backup imports are validated before replacement and committed atomically. Backups omit the API key by default.
+
+## Screens
+
+**Chat:** talk to Coach, request a realistic plan, check off tasks, or reflect on the day. Planning only uses actual context; Coach can ask for clarification instead of inventing a schedule. Goal percentages should follow evidence, not elapsed time.
+
+**News:** public interest searches on Hacker News via Algolia, plus your RSS/Atom feeds. Edit topics and headline words to hide in Settings, or ask Coach to change them. Default interests are AI, software, startups, and design; default exclusions reduce crypto, politics, crime, military, and sports headlines. These are editable. News is headline discovery, not full-article reading or a general web browser. The public search corpus limits available coverage; add trusted feeds to broaden it. Feed items must have valid HTTP(S) links and recent dates. Sources that fail show an error instead of a fabricated replacement.
+
+**Settings:** connection, personal context, voice, goals, durable memory, semantic memory, news preferences, transcript search, prompt preview, and backups. Profile and voice are saved explicitly. Background app updates do not replace these drafts.
+
+## Memory and privacy
+
+Messages, task history, goals, facts, the API key, and vectors live in IndexedDB on this device. Changing the hosting origin does **not** transfer browser storage; export a backup before moving hosts. Browser data deletion or an uninstall can remove local data, so keep backups.
+
+Each Gemini request includes your profile, voice preferences, goals, durable facts, latest summary, today's tasks, a recent transcript, and a few relevant archived excerpts. It does not send the whole archive. Older conversations are summarized in bounded batches; raw messages remain available.
+
+Optional semantic memory loads `Xenova/all-MiniLM-L6-v2` through pinned Transformers.js 2.17.2. Model/runtime files are downloaded from jsDelivr and Hugging Face and browser-cached when possible. Inference and vectors stay on-device. Storage pressure or browser cache eviction can require another download. WASM inference is serialized so retrieval and background indexing do not collide. Keyword search works while memory is paused or unavailable.
+
+News sends only saved public topics and feed URLs to the source services; it does not turn private goals or conversations into queries. Optional editorial curation sends fetched headlines and your reading preferences to Gemini, without private chat, profile, or goal context. Results are cached for fifteen minutes; a manual refresh can make a new curation request. Curation failures fall back to labelled topic matches rather than made-up articles. RSS is read directly by default. The optional AllOrigins proxy sends the feed URL to that third party. Gemini, news, and embedding downloads require network access; the app shell and stored data are available offline.
+
+Backups contain private conversations and memories even without a key. Including a key is an explicit checkbox. Existing Moeware-format backups are accepted when their structure is valid. Imports replace the local archive after an in-app confirmation. A wipe clears this app's stores and its legacy storage key, not unrelated storage on the origin.
+
+## Verification
+
+```sh
+node --check app.js
+node --check sw.js
+node --test tests/coach.test.cjs
+```
+
+The regression suite uses a small transaction-aware storage fixture and mocked Gemini/news responses. It covers scroll isolation, double-send prevention, tool validation and round trips, atomic updates/restores, fallback behavior, indexing and pause, news filtering, rollover, and archive preservation. It does not claim to validate Google's live model output or every browser's IndexedDB behavior. Real provider testing needs an API key in the browser; no credentials are bundled.
+
+The PWA caches the app shell, fetches fresh files when online, and offers an update button for a waiting worker. Accepting an update reloads only after the new worker takes control. It leaves embedding download caches and unrelated origin caches alone.
+
+API references: [Gemini function calling](https://ai.google.dev/gemini-api/docs/generate-content/function-calling), [Transformers.js pipelines](https://huggingface.co/docs/transformers.js/v2.17.2/pipelines).
