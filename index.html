@@ -2,27 +2,30 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="app-version" content="8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Coach — a little less on your mind</title>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
+<title>Wrinkle Coach — a little less on your mind</title>
+<link rel="manifest" href="manifest.webmanifest?v=8">
+<link rel="icon" href="icons/icon-192.png?v=8">
+<link rel="apple-touch-icon" href="icons/icon-180.png?v=8">
 <meta name="theme-color" content="#f3f1e9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Coach">
-<script src="theme.js"></script>
-<link rel="stylesheet" href="style.css">
+<meta name="apple-mobile-web-app-title" content="Wrinkle Coach">
+<script src="theme.js?v=8"></script>
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
 <header class="topbar">
   <div class="topbar-inner">
-    <a class="brand" href="#" aria-label="Coach home"><span class="brand-mark">c<span>•</span></span><span>Coach<span class="brand-note">a little less on your mind</span></span></a>
+    <a class="brand" href="#" aria-label="Wrinkle Coach home"><span class="brand-mark">w<span>•</span></span><span>Wrinkle Coach<span class="brand-note">a little less on your mind</span></span></a>
     <div class="header-actions"><button id="newsRefresh" class="ghost-small" hidden>Refresh feeds</button><button id="themeToggle" class="ghost-small" aria-label="Dark mode" aria-pressed="false">☾ Dark</button><button id="settingsGo" class="ghost-small" aria-label="Settings">Settings ↗</button></div>
   </div>
 </header>
 
+<div id="startupBanner" class="banner startup-panel" role="status"><span id="startupMessage">Opening your saved data…</span><button id="startupReload" class="link">Reload app</button></div>
+<div id="updateBanner" class="banner startup-panel" hidden><span>A new version of Wrinkle Coach is ready.</span><button id="installUpdate" class="link">Update &amp; reload</button></div>
 <main>
   <div id="setupBanner" class="banner" hidden>
     <span>Add your Gemini API key to turn on the coach.</span>
@@ -40,7 +43,7 @@
     <div id="brief" class="focus-card" hidden></div>
     <div id="plan" class="card" hidden></div>
     <div id="modelLine" class="model-line" hidden></div>
-    <div id="chat" class="chat" role="log" aria-label="Conversation with Coach" aria-live="polite"></div>
+    <div id="chat" class="chat" role="log" aria-label="Conversation with Wrinkle Coach" aria-live="polite"></div>
   </section>
 
   <!-- ======= NEWS ======= -->
@@ -54,8 +57,8 @@
       <label>Less of this <span class="muted">(headline words to hide, comma-separated)</span><input id="excludedNews" placeholder="crypto, politics"></label>
       <label for="readingTaste">What makes a good read for you?</label>
       <textarea id="readingTaste" rows="3" placeholder="Practical ideas I can use, thoughtful design, and founder lessons. Skip the hype."></textarea>
-      <label class="check"><input id="curateNews" type="checkbox">Let Coach pick the strongest reads</label>
-      <p class="muted">With a connected AI key, Coach selects up to eight real headlines and explains the picks. This sends headlines and your reading preferences to Gemini; your private chats and goals stay out of headline curation.</p>
+      <label class="check"><input id="curateNews" type="checkbox">Let Wrinkle Coach pick the strongest reads</label>
+      <p class="muted">With a connected AI key, Wrinkle Coach selects up to eight real headlines and explains the picks. This sends headlines and your reading preferences to Gemini; your private chats and goals stay out of headline curation.</p>
       <div class="row"><button id="saveNewsPreferences" class="primary">Save reading mix</button><button id="useSuggestedInterests">Use suggested mix</button></div><label class="check"><input id="useHackerNews" type="checkbox">Include Hacker News topic matches</label><h3 class="section-gap">Your newsletters &amp; feeds</h3><p class="muted">Add public RSS/Atom feeds from the writers you like. Email subscriptions are not connected.</p>
       <p class="muted">One per line: <code>Name | https://feed-url</code>. Read directly from the source.</p>
       <textarea id="feeds" rows="4" aria-label="RSS feeds" placeholder="Stratechery | https://stratechery.com/feed/"></textarea>
@@ -73,7 +76,7 @@
     <div class="page-heading"><p class="eyebrow">The bigger picture</p><h1>Your stuff, together.</h1><p class="muted">Projects, loose ends, and the things worth remembering.</p></div>
     <div class="card">
       <h3>Goals</h3>
-      <p class="muted">Tell Coach about your goals, deadlines, and milestones in chat. It keeps the longer view so you can focus on today.</p>
+      <p class="muted">Tell Wrinkle Coach about your goals, deadlines, and milestones in chat. It keeps the longer view so you can focus on today.</p>
       <div class="row">
         <input id="goalTitle" aria-label="New goal" placeholder="e.g. Launch pilot with [Company]">
         <button id="addGoal" class="primary">Add</button>
@@ -82,13 +85,13 @@
     </div>
 
     <details class="card disclosure">
-      <summary>Everything Coach is keeping track of</summary>
-      <div class="disclosure-body"><p class="muted">Unfinished commitments stay here across days. Coach brings forward only what needs attention today.</p><ul id="backlogList" class="list"></ul></div>
+      <summary>Everything Wrinkle Coach is keeping track of</summary>
+      <div class="disclosure-body"><p class="muted">Unfinished commitments stay here across days. Wrinkle Coach brings forward only what needs attention today.</p><ul id="backlogList" class="list"></ul></div>
     </details>
 
     <div class="card">
       <h3>The things worth remembering</h3>
-      <p class="muted">People, preferences, and decisions. Tell Coach when something changes; it replaces the old memory. You can also forget a memory here.</p>
+      <p class="muted">People, preferences, and decisions. Tell Wrinkle Coach when something changes; it replaces the old memory. You can also forget a memory here.</p>
       <ul id="factList" class="list"></ul>
       <div class="row">
         <input id="factInput" aria-label="New memory" placeholder="e.g. Pilot contact is Sarah">
@@ -98,7 +101,7 @@
 
     <div class="card">
       <h3>The person behind the plans</h3>
-      <p class="muted">What’s going on in your world? What do you want Coach to understand?</p>
+      <p class="muted">What’s going on in your world? What do you want Wrinkle Coach to understand?</p>
       <textarea id="profile" rows="4" aria-label="About you" placeholder="My partner and I are starting a software company. We're building … Our north star is … Biggest constraint right now is …"></textarea>
       <button id="saveProfile">Save context</button>
     </div>
@@ -120,7 +123,7 @@
     </div>
     <div class="persona-notice"><span class="pill">Make-believe, clearly labeled</span><p>AI roleplay inspired by public work and your notes. These are not the real people, their actual opinions, or endorsed assistants. No live knowledge or private access.</p></div>
     <h2 id="personaLabel" class="lounge-title"></h2><div id="personaChat" class="chat" role="log" aria-label="Fictional conversation" aria-live="polite"></div>
-    <div class="card persona-composer"><label for="personaInput">Talk it through</label><textarea id="personaInput" rows="3" placeholder="Here’s my idea. Where would you push back?"></textarea><div class="row"><button id="personaSend" class="primary">Send</button><span id="personaStatus" class="muted" role="status"></span></div><p class="muted small">Each person has a separate chat. Only its latest 40 messages and your inspiration notes are sent; your Coach memories and tasks stay out.</p></div>
+    <div class="card persona-composer"><label for="personaInput">Talk it through</label><textarea id="personaInput" rows="3" placeholder="Here’s my idea. Where would you push back?"></textarea><div class="row"><button id="personaSend" class="primary">Send</button><span id="personaStatus" class="muted" role="status"></span></div><p class="muted small">Each person has a separate chat. Only its latest 40 messages and your inspiration notes are sent; your Wrinkle Coach memories and tasks stay out.</p></div>
   </section>
 
   <!-- ======= SETTINGS ======= -->
@@ -164,7 +167,7 @@
 
     <div class="card">
       <h3>Semantic memory <span id="embedBadge" class="pill">off</span></h3>
-      <p class="muted">Search old conversations by <em>meaning</em>, so Coach can connect the dots.
+      <p class="muted">Search old conversations by <em>meaning</em>, so Wrinkle Coach can connect the dots.
         A small model and runtime download first; your history is processed on this device.</p>
       <button id="embedToggle" class="primary">Enable semantic memory</button>
       <button id="embedRetry" hidden>Retry indexing</button>
@@ -206,7 +209,7 @@
 <!-- ======= COMPOSER (home only) ======= -->
 <div id="composer" class="composer">
   <div class="composer-inner">
-    <textarea id="chatInput" rows="1" placeholder="So, here’s the thing…" aria-label="Message Coach" autocomplete="off"></textarea>
+    <textarea id="chatInput" rows="1" placeholder="So, here’s the thing…" aria-label="Message Wrinkle Coach" autocomplete="off"></textarea>
     <button id="sendChat" class="primary" aria-label="Send">↑</button>
   </div>
 </div>
@@ -227,6 +230,7 @@
 
 <div id="toast" class="toast" role="status"></div>
 
-<script src="app.js"></script>
+<script src="startup.js?v=8"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

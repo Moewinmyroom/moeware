@@ -22,7 +22,9 @@
   }
 
   applyTheme();
-  system.addEventListener('change', () => { if (!preference) applyTheme(); });
+  const followSystem = () => { if (!preference) applyTheme(); };
+  if (system.addEventListener) system.addEventListener('change', followSystem);
+  else if (system.addListener) system.addListener(followSystem);
   document.addEventListener('DOMContentLoaded', () => {
     applyTheme();
     document.getElementById('themeToggle').addEventListener('click', () => {

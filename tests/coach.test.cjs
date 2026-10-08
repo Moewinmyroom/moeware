@@ -31,7 +31,7 @@ function fixture(){
   const document={getElementById:node,createElement:()=>new Element(),querySelector:()=>new Element(),querySelectorAll:sel=>sel.includes('.tabbar')||sel==='.tab'?tabs:[],body:new Element(),documentElement:{scrollHeight:1600,style:{setProperty(){}}},addEventListener(){}};
   const context=vm.createContext({console,document,window,navigator:{onLine:true},localStorage:{getItem(){return null;},removeItem(){}},location:{reload(){}},indexedDB:{},testDB:database,URL,Blob,Map,Set,Float32Array,AbortSignal,structuredClone,setTimeout:(fn,ms)=>{const timer=setTimeout(fn,ms);timer.unref?.();return timer;},clearTimeout,requestAnimationFrame:fn=>fn(),fetch:async()=>{throw new Error('Unexpected network request');},confirm:()=>true});
   const source=fs.readFileSync('app.js','utf8').replace(/\nboot\(\);\s*$/,'');
-  vm.runInContext(source+`\ndb=testDB; globalThis.api={today,loadState,addMessage,applyAction,validateAction,validateBackup,restoreBackup,loadVectors,queueEmbed,pumpEmbed,setEmbeddings,updateEmbedStatus,semanticHits,parseBlock,geminiCall,ask,getNews,goTab,scrollChat,wire,sendChat,refreshDay,actionSnapshot,maybeSummarize,getBrief,closeDay,resetVectors,contextBlock,searchMemory,todaysTasks,activeTasks,rankedTasks,morningRequest,automaticBackup,backupDump,savePersonalization,wirePersonalization,sendPersona,renderPeople,searchReadingWeb,groundedResult,deleteContext,
+  vm.runInContext(source+`\ndb=testDB; globalThis.api={openDB,boot,today,loadState,addMessage,applyAction,validateAction,validateBackup,restoreBackup,loadVectors,queueEmbed,pumpEmbed,setEmbeddings,updateEmbedStatus,semanticHits,parseBlock,geminiCall,ask,getNews,goTab,scrollChat,wire,sendChat,refreshDay,actionSnapshot,maybeSummarize,getBrief,closeDay,resetVectors,contextBlock,searchMemory,todaysTasks,activeTasks,rankedTasks,morningRequest,automaticBackup,backupDump,savePersonalization,wirePersonalization,sendPersona,renderPeople,searchReadingWeb,groundedResult,deleteContext,
     selectPerson:id=>{selectedPersonId=id;},
     state:()=>S,messages:()=>MSGS,tasks:()=>TASKS,vectors:()=>VECS,busy:()=>busy,
     reset:()=>{S=structuredClone(DEFAULTS);MSGS=[];TASKS=[];SUMMARY=null;SUMMARIES=[];},
@@ -41,6 +41,37 @@ function fixture(){
   return {api:context.api,node,tables,database,window,context};
 }
 const plain=x=>JSON.parse(JSON.stringify(x));
+
+test('blocked installed-app database upgrades explain recovery instead of silently hanging',async()=>{
+  const f=fixture(),request={};const notices=[];
+  f.window.WrinkleStartup={status:message=>notices.push(message)};
+  f.context.indexedDB.open=()=>request;
+  const pending=f.api.openDB();
+  assert.equal(typeof request.onblocked,'function');request.onblocked();
+  assert.match(notices.at(-1),/Close other.*tabs/i);
+  let closed=false;request.result={close(){closed=true;}};request.onsuccess();const connection=await pending;
+  assert.equal(typeof connection.onversionchange,'function');connection.onversionchange();assert.equal(closed,true);
+});
+
+test('navigation and recovery remain available while saved data is opening',()=>{
+  const f=fixture();vm.runInContext('openDB=()=>new Promise(()=>{});',f.context);
+  f.api.boot();assert.equal(typeof f.node('settingsGo').onclick,'function');
+  f.node('settingsGo').onclick();assert.equal(f.context.document.body.dataset.tab,'settings');
+});
+
+test('a stalled database open times out safely and closes a late connection',async()=>{
+  const f=fixture(),request={};let expire,closed=false;
+  f.context.indexedDB.open=()=>request;f.context.setTimeout=fn=>{expire=fn;return 1;};
+  const pending=f.api.openDB();expire();await assert.rejects(pending,/Close other Wrinkle Coach tabs/);
+  request.result={close(){closed=true;}};request.onsuccess();assert.equal(closed,true);
+});
+
+test('startup storage errors surface recovery instructions without replacing the page',async()=>{
+  const f=fixture(),notices=[];f.window.WrinkleStartup={status:text=>notices.push(text)};
+  vm.runInContext('openDB=async()=>{throw new Error("Storage unavailable");};',f.context);
+  await f.api.boot();assert.match(notices.at(-1),/Storage unavailable/);assert.match(notices.at(-1),/Do not clear site data/);
+  assert.equal(typeof f.node('settingsGo').onclick,'function');assert.equal(f.context.document.body.innerHTML,'');
+});
 
 test('editable master prompt survives reload and reaches the next request without the old persona',async()=>{
   const f=fixture();f.api.setState({apiKey:'test-only'});f.api.wirePersonalization();
@@ -121,7 +152,7 @@ test('rename retains the original database and all archived task days',async()=>
   const f=fixture();f.tables.tasks.set('yesterday',{id:'yesterday',day:'2000-01-01',title:'Old task'});
   await f.api.loadState();assert.equal(f.api.tasks().length,1);assert.equal(f.api.todaysTasks().length,0);assert.equal(f.tables.tasks.size,1);
   assert.match(fs.readFileSync('app.js','utf8'),/DB_NAME='moeware'/);
-  assert.equal(JSON.parse(fs.readFileSync('manifest.webmanifest','utf8')).name,'Coach');
+  assert.equal(JSON.parse(fs.readFileSync('manifest.webmanifest','utf8')).name,'Wrinkle Coach');
 });
 test('viewport events never scroll Settings; tab positions restore independently',()=>{
   const f=fixture();f.api.wire();f.api.goTab('settings');f.window.scrollY=420;const calls=f.window.scrolls.length;

@@ -80,3 +80,5 @@ label.check{display:flex;gap:11px;align-items:flex-start;font-size:.86rem;color:
 [data-theme="dark"] .toast{background:#e2e8d7;color:#252d27}
 [data-theme="dark"] .toast.action{background:#b8cd99;color:#1e2a18}
 @media(max-width:520px){.topbar-inner{flex-wrap:wrap}.header-actions{margin-left:auto}}
+.startup-panel{max-width:772px;margin:18px auto 0;position:relative;z-index:21}.startup-panel button{flex:none;min-height:44px}.brand-mark{font-size:1.65rem}
+@media(max-width:820px){.startup-panel{margin:14px 16px 0}}
