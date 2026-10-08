@@ -1,6 +1,6 @@
 // Coach service worker — network-first, with an offline app shell.
-const CACHE = 'coach-v4';
-const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png', 'icons/icon-512.png'];
+const CACHE = 'coach-v7';
+const SHELL = ['./', 'index.html', 'style.css', 'theme.js', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-180.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));

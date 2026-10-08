@@ -1,6 +1,18 @@
 # Coach
 
-A private, local-first coach with a warm voice, a little humor, and honest accountability. A static PWA: no build step, server account, or analytics.
+## Make it yours
+
+The interface uses warm cream, moss, charcoal, and mustard, with **Chat**, **Reads**, **My stuff**, and **Lounge** in the navigation. Settings and a light/dark toggle are in the header. The theme follows your system until you choose one; that choice is remembered on this device and applied before the first paint. Goals, saved memories, your profile, and history search live in My stuff.
+
+- **Editable master prompt:** Settings opens with a short personality prompt. The default is a candid, playful friend: “one of the girlies,” without turning every conversation into homework. Save any replacement, including an empty prompt, or restore the default. Separate, visible app-mechanics instructions explain tools and factual bookkeeping. Existing extra voice preferences still apply. Prompt changes affect subsequent replies and survive backups.
+- **Reads:** The suggested interests are newsletters, founders, small business, marketing, and using AI. Edit up to twelve topics, exclusions, reading taste, and RSS/Atom feeds. Existing custom interests are retained; the previous stock software-interest list migrates to the new suggestions. Hacker News is optional and off by default. “Use suggested mix” fills the form without overwriting saved preferences until Save is clicked.
+- **Find fresh reads:** A user-triggered Gemini request uses Google Search grounding for recent coverage of saved interests and followed names. It sends reading preferences and names, not your chat, profile, goals, persona notes, or memories. Results require source metadata, show citations and source links, and display Google's search suggestions in a sandboxed frame. Search may incur provider charges. No automatic/background web roundup runs, and a failed/unsupported provider response is shown honestly. RSS remains a separate source; private email newsletters and social accounts are not connected.
+- **Lounge:** Add the business people whose work interests you and optional notes about the perspective you want. Each gets a clearly labeled fictional AI conversation, inspired by public work and your notes, with no claim to real opinions or endorsement. The latest 40 messages from that person's chat go to Gemini. These chats do not use or update Coach's ordinary memories, commitments, or history and have no live web access. Names also inform your next reading roundup. All fictional history remains in backups until deleted.
+- **Context controls:** Settings lets you delete selected categories or reset all personal context while preserving your key, master prompt, reading mix, and people definitions. Chat deletion can be limited to an inclusive local date range and also removes saved records linked to deleted messages. Every deletion clears episode summaries, vector indexes, today's focus, and local recovery snapshots, and disconnects automatic folder backups. Surviving chat history can be reindexed/summarized later. Removing saved memories alone does not erase mentions in retained conversations. Exported files are outside the deletion scope. “Wipe this device” also resets credentials and preferences. Destructive actions require an in-app confirmation and commit atomically.
+
+The regression suite includes prompt persistence, fictional-chat isolation, grounded-news provenance and privacy, selective/full context deletion, failed-write recovery, and stale/in-flight summary protection. Desktop and phone layouts were checked in the browser; live Gemini/search output still needs verification with a valid API key.
+
+A personal Gemini assistant that keeps the bigger picture and helps you focus on today. Talk throughout the day about changes, projects, deadlines, and completed work. Each morning, ask “What do I absolutely have to do today?” or use **What matters today?**
 
 ## Run
 
@@ -8,39 +20,50 @@ A private, local-first coach with a warm voice, a little humor, and honest accou
 python -m http.server 8000
 ```
 
-Open `http://localhost:8000`. Use HTTPS when hosting. In Settings, save your Gemini API key and add some context about yourself. The key stays in this browser and is sent to Google's Gemini API in a request header. Never put a key in the source code or commit a backup that includes one.
+Open `http://localhost:8000`. Use HTTPS when hosting. Save your Gemini API key in Settings. No build step, server account, or analytics. Install through your browser's Install App / Add to Home Screen menu.
 
-Install from your browser's Add to Home Screen / Install App menu. The installed app and manifest are named **Coach**. Existing installations may need to be reopened or reinstalled for the launcher name/icon to refresh. Their local database is intentionally still named `moeware`, so the rename preserves existing data on the same origin.
+## Daily focus
 
-## What changed
+Coach keeps a persistent backlog of commitments. Tasks support deadlines, not-before dates, estimated minutes, priority, blockers, consequences, completion history, and goal links. Unfinished work survives day changes. Cancelled commitments remain in history.
 
-- A cream and lilac interface, responsive navigation, accessible controls, conversation starters, and a quieter optional planning area.
-- Settings and News preserve independent scroll positions. Mobile viewport/keyboard changes adjust composer placement without scrolling the page. Replies follow the conversation only while you're following it; otherwise a New reply button appears.
-- Coach responds to what you say. Venting, questions, wins, and casual conversation no longer require a task recap. Daily planning is requested, never an automatic API call at launch. Add voice preferences in Settings.
-- Gemini receives native `update_coach` and `read_news` tool definitions. Changes are validated and saved in a transaction; replies show receipts. Tool responses preserve the model's thought signatures. Temporary failures can use the configured fallback chain, but a request that has already used tools is not replayed across models.
-- News searches selected public topics, checks headline relevance, filters unwanted words, deduplicates links, limits stories to the last 14 days, and balances categories. With editorial picks enabled and a connected key, Coach selects up to eight worthwhile reads from real candidates and explains its picks. Topic matching offers up to twelve stories without AI; fewer when matches are weak. AI discussion uses real headline links, not generated articles.
-- Local semantic memory indexes every saved message, updates its count continuously, deduplicates its queue, reports failures, supports retry, and respects pause. A downloaded model with no conversations shows an explanatory empty state. Imports rebuild vectors against the restored message IDs.
-- Task records survive day rollover and reflection. Backup imports are validated before replacement and committed atomically. Backups omit the API key by default.
+The chat screen shows only the selected daily focus and work completed today. Normally Coach selects one main priority and at most two other necessary actions, explains why each matters today, and distinguishes genuine obligations from optional progress. It considers future deadlines internally, including preparation needed today, without presenting a weekly roadmap. It should say when nothing is truly urgent. Morning greetings and daily-focus requests work directly in chat. Planning is never an automatic API request at launch.
 
-## Screens
+During the day, report completions, constraints, and new commitments naturally. Coach saves supported updates with native Gemini tools and visible receipts. Use **Later** to remove an item from today's focus while keeping the commitment. The full backlog is available in a collapsed Settings section when you want to inspect it.
 
-**Chat:** talk to Coach, request a realistic plan, check off tasks, or reflect on the day. Planning only uses actual context; Coach can ask for clarification instead of inventing a schedule. Goal percentages should follow evidence, not elapsed time.
+Goals can hold project notes, next actions, blockers, horizons, and milestones. When milestones exist, progress is calculated from completed milestones. Without milestones, percentages are user-reported rather than an estimate of success or schedule health. Deadlines are local calendar dates, not appointment times.
 
-**News:** public interest searches on Hacker News via Algolia, plus your RSS/Atom feeds. Edit topics and headline words to hide in Settings, or ask Coach to change them. Default interests are AI, software, startups, and design; default exclusions reduce crypto, politics, crime, military, and sports headlines. These are editable. News is headline discovery, not full-article reading or a general web browser. The public search corpus limits available coverage; add trusted feeds to broaden it. Feed items must have valid HTTP(S) links and recent dates. Sources that fail show an error instead of a fabricated replacement.
+Prioritization and extracting commitments still require model judgment. The app validates data, IDs, dates, and selection eligibility; it cannot prove that every model-generated priority is correct. If essential information is missing, Coach should ask one focused question instead of inventing an obligation.
 
-**Settings:** connection, personal context, voice, goals, durable memory, semantic memory, news preferences, transcript search, prompt preview, and backups. Profile and voice are saved explicitly. Background app updates do not replace these drafts.
+## Memory
 
-## Memory and privacy
+- The latest 24 messages are included in full. Messages awaiting summarization also stay in context, closing the gap between the recent window and archived memory.
+- Older exchanges become independent dated episodes, normally up to 20 messages per batch. Episodes retain decisions, reasons, constraints, and speaker attribution. A year is not repeatedly compressed into one tiny rolling paragraph. Raw transcripts are preserved.
+- Episode creation and marking covered messages commit together. Maintenance failures appear in Settings with a retry action; failed episodes do not disappear from working context. Very large unsummarized backlogs stop a request with an explicit maintenance instruction instead of silently dropping history.
+- Durable memory uses IDs, stable keys, project scopes, dates, and conversation source references. Corrections retire the old version; forgetting retires an active memory. There is no sixty-fact eviction limit. Forgetting a durable memory does not erase the raw conversation or backups; historical claims are explicitly marked as superseded/forgotten in context.
+- Retrieval includes neighboring exchanges and relevant dated episodes. Vague follow-up questions use recent user context to help identify the subject. Coach can call `search_memory` itself, including date-limited searches, when automatic retrieval is insufficient.
+- Optional semantic search runs `Xenova/all-MiniLM-L6-v2` locally through pinned Transformers.js 2.17.2. Downloads come from jsDelivr and Hugging Face. Keyword search remains available while semantic indexing is paused or unavailable.
 
-Messages, task history, goals, facts, the API key, and vectors live in IndexedDB on this device. Changing the hosting origin does **not** transfer browser storage; export a backup before moving hosts. Browser data deletion or an uninstall can remove local data, so keep backups.
+Older databases and validated Moeware/Coach backups are migrated without deleting task history. Existing rolling summaries remain available as historical records; originals can still be searched. Multiple tabs use revision checks to prevent stale state overwriting a newer saved task/memory update.
 
-Each Gemini request includes your profile, voice preferences, goals, durable facts, latest summary, today's tasks, a recent transcript, and a few relevant archived excerpts. It does not send the whole archive. Older conversations are summarized in bounded batches; raw messages remain available.
+## Storage and recovery
 
-Optional semantic memory loads `Xenova/all-MiniLM-L6-v2` through pinned Transformers.js 2.17.2. Model/runtime files are downloaded from jsDelivr and Hugging Face and browser-cached when possible. Inference and vectors stay on-device. Storage pressure or browser cache eviction can require another download. WASM inference is serialized so retrieval and background indexing do not collide. Keyword search works while memory is paused or unavailable.
+Messages, goals, tasks, memories, API credentials, vectors, and episode summaries live in IndexedDB in this browser. The database remains named `moeware` for compatibility. Only the light/dark appearance preference uses localStorage; it is not part of exported backups. Gemini requests send the selected private context to Google; local storage does not mean AI requests stay on-device.
 
-News sends only saved public topics and feed URLs to the source services; it does not turn private goals or conversations into queries. Optional editorial curation sends fetched headlines and your reading preferences to Gemini, without private chat, profile, or goal context. Results are cached for fifteen minutes; a manual refresh can make a new curation request. Curation failures fall back to labelled topic matches rather than made-up articles. RSS is read directly by default. The optional AllOrigins proxy sends the feed URL to that third party. Gemini, news, and embedding downloads require network access; the app shell and stored data are available offline.
+Automatic recovery snapshots retain the last seven active days in the same browser. These help recover accidental changes but share the browser's storage and do not survive deletion of that storage. In Settings → Data, export an independent backup or connect an automatic backup folder in a browser supporting the File System Access API. Folder access is user-selected, must remain authorized, and only writes while the app is running. Folder backups use one file per active local day. Reconnect if browser permissions expire. Backups contain private conversations; automatic snapshots and folder backups omit the API key.
 
-Backups contain private conversations and memories even without a key. Including a key is an explicit checkbox. Existing Moeware-format backups are accepted when their structure is valid. Imports replace the local archive after an in-app confirmation. A wipe clears this app's stores and its legacy storage key, not unrelated storage on the origin.
+Manual exports omit the key unless explicitly selected. Backup import/restore is validated and atomic. The current Gemini key is preserved when a backup omits it. Changing hosting origin does not transfer storage: export before moving. Wiping the device clears all app stores, including recovery snapshots, after confirmation.
+
+The app shell works offline; AI replies require a connection. Automatic memory maintenance makes additional Gemini requests as older conversations accumulate. Usage is not currently metered in the app.
+
+## News
+
+Reads combines an on-demand Google Search roundup with user-provided RSS/Atom feeds and optional Hacker News matches via Algolia. Public interests and feed URLs go to the source services, not private chat or goal-derived searches. Optional Gemini headline curation sends headline candidates and reading preferences without private profile/chat/goal context. Feed stories are filtered, deduplicated, and cached for fifteen minutes. Failures produce labelled fallbacks or source errors, not invented articles. RSS reads directly by default; an optional AllOrigins proxy is explicitly enabled in the reading mix.
+
+## Current boundaries
+
+This is a browser-local assistant. It does not yet have calendar access, cross-device sync, scheduled background notifications, arbitrary document access, or a microphone/voice conversation interface. It can update its own commitments and memory and read headlines. Those external capabilities require separate integrations. The daily workflow is conversational and starts when you talk to Coach each morning.
+
+The default tone follows the user's request for “one of the girlies”; personality is editable in Settings. Fictional business personas are separate from that everyday voice.
 
 ## Verification
 
@@ -50,8 +73,6 @@ node --check sw.js
 node --test tests/coach.test.cjs
 ```
 
-The regression suite uses a small transaction-aware storage fixture and mocked Gemini/news responses. It covers scroll isolation, double-send prevention, tool validation and round trips, atomic updates/restores, fallback behavior, indexing and pause, news filtering, rollover, and archive preservation. It does not claim to validate Google's live model output or every browser's IndexedDB behavior. Real provider testing needs an API key in the browser; no credentials are bundled.
+The suite uses transaction-aware storage fixtures and mocked Gemini/news responses. It covers daily focus and persistent backlog, stable-ID updates, date validation, blockers, correction/forgetting, provenance, milestone progress, context continuity, atomic episodic memory, stale-tab conflicts, backup recovery, native tool round trips, fallback, and existing news/indexing/scroll behavior. Live Gemini output and browser-specific storage/permission behavior require separate provider/browser checks.
 
-The PWA caches the app shell, fetches fresh files when online, and offers an update button for a waiting worker. Accepting an update reloads only after the new worker takes control. It leaves embedding download caches and unrelated origin caches alone.
-
-API references: [Gemini function calling](https://ai.google.dev/gemini-api/docs/generate-content/function-calling), [Transformers.js pipelines](https://huggingface.co/docs/transformers.js/v2.17.2/pipelines).
+References: [Gemini function calling](https://ai.google.dev/gemini-api/docs/generate-content/function-calling), [Google Search grounding](https://ai.google.dev/gemini-api/docs/generate-content/google-search), [Transformers.js pipelines](https://huggingface.co/docs/transformers.js/v2.17.2/pipelines).

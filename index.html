@@ -3,22 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Coach — in your corner</title>
+<title>Coach — a little less on your mind</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<meta name="theme-color" content="#f7f5fb">
+<meta name="theme-color" content="#f3f1e9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Coach">
+<script src="theme.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="topbar">
   <div class="topbar-inner">
-    <a class="brand" href="#" aria-label="Coach home"><span class="brand-mark">c<span>✦</span></span><span>Coach<span class="brand-note">in your corner</span></span></a>
-    <button id="newsRefresh" class="ghost-small" hidden>Refresh</button>
+    <a class="brand" href="#" aria-label="Coach home"><span class="brand-mark">c<span>•</span></span><span>Coach<span class="brand-note">a little less on your mind</span></span></a>
+    <div class="header-actions"><button id="newsRefresh" class="ghost-small" hidden>Refresh feeds</button><button id="themeToggle" class="ghost-small" aria-label="Dark mode" aria-pressed="false">☾ Dark</button><button id="settingsGo" class="ghost-small" aria-label="Settings">Settings ↗</button></div>
   </div>
 </header>
 
@@ -30,11 +31,11 @@
 
   <!-- ======= HOME / CHAT ======= -->
   <section id="tab-home" class="tab active">
-    <div class="page-heading"><p class="eyebrow">Your space to figure it out</p><h1>A little clarity.<br>A lot of <em>you’ve got this.</em></h1></div>
+    <div class="page-heading"><p class="eyebrow">Room to think</p><h1>What’s on your plate?</h1><p class="muted">Big plans, tiny updates, or a thought that needs company.</p></div>
     <div id="welcome" class="welcome card">
-      <span class="welcome-spark">✦</span><h2>Hey girl hey 💅</h2>
-      <p>Big plans, messy days, tiny wins. Bring all of it.</p><p class="muted">We’ll find your next move together.</p>
-      <div class="starters"><button data-starter="I'm overwhelmed. Can we talk it through?">Untangle my thoughts</button><button data-starter="Help me figure out what matters today.">Find my focus</button><button data-starter="I have a win to share!">Share a win</button></div>
+      <span class="welcome-spark" aria-hidden="true">✳</span><h2>Okay, tell me everything.</h2>
+      <p>Tell me what’s changed, what you’ve finished, and what’s on your mind.</p><p class="muted">We can make a plan, untangle an idea, or just talk. You set the pace.</p>
+      <div class="starters"><button data-starter="Good morning. What do I absolutely have to do today?">What matters today?</button><button data-starter="Here’s what changed today…">Give an update</button><button data-starter="I finished…">I did a thing</button></div>
     </div>
     <div id="brief" class="focus-card" hidden></div>
     <div id="plan" class="card" hidden></div>
@@ -44,25 +45,88 @@
 
   <!-- ======= NEWS ======= -->
   <section id="tab-news" class="tab">
-    <div class="page-heading">
-      <p class="eyebrow">A little food for thought</p>
-      <h1>The reading room.</h1>
-      <p class="muted">A few worthwhile reads across your interests. Less noise, more curiosity.</p>
-    </div>
+    <div class="page-heading"><p class="eyebrow">Follow the interesting bits</p><h1>Your current rabbit holes.</h1><p class="muted">A reading mix that changes when you do.</p></div>
+    <div class="card reading-intro"><span class="eyebrow">Fresh perspectives</span><h2>A little outside input.</h2><p id="readingTopics"></p><p class="muted">Plus whoever you’re keeping an eye on.</p><div id="followingList" class="chips"></div><button id="webNewsBtn" class="primary">Find fresh reads ↗</button><p class="muted small">Searches the web with Gemini using your saved interests, reading preferences, and followed names. Uses your API key and may incur search charges. Runs only when you ask.</p></div>
+    <div id="webNewsOut" aria-live="polite"></div>
+    <details class="card disclosure"><summary>Tune your reading mix</summary><div class="disclosure-body">
+      <h3>Into this lately</h3>
+      <label>What are you curious about? <span class="muted">(up to twelve topics, comma-separated)</span><input id="newsInterests" placeholder="newsletters, founders, small business, marketing, using AI"></label>
+      <label>Less of this <span class="muted">(headline words to hide, comma-separated)</span><input id="excludedNews" placeholder="crypto, politics"></label>
+      <label for="readingTaste">What makes a good read for you?</label>
+      <textarea id="readingTaste" rows="3" placeholder="Practical ideas I can use, thoughtful design, and founder lessons. Skip the hype."></textarea>
+      <label class="check"><input id="curateNews" type="checkbox">Let Coach pick the strongest reads</label>
+      <p class="muted">With a connected AI key, Coach selects up to eight real headlines and explains the picks. This sends headlines and your reading preferences to Gemini; your private chats and goals stay out of headline curation.</p>
+      <div class="row"><button id="saveNewsPreferences" class="primary">Save reading mix</button><button id="useSuggestedInterests">Use suggested mix</button></div><label class="check"><input id="useHackerNews" type="checkbox">Include Hacker News topic matches</label><h3 class="section-gap">Your newsletters &amp; feeds</h3><p class="muted">Add public RSS/Atom feeds from the writers you like. Email subscriptions are not connected.</p>
+      <p class="muted">One per line: <code>Name | https://feed-url</code>. Read directly from the source.</p>
+      <textarea id="feeds" rows="4" aria-label="RSS feeds" placeholder="Stratechery | https://stratechery.com/feed/"></textarea>
+      <button id="saveFeeds">Save feeds</button>
+      <label class="check">
+        <input type="checkbox" id="allowProxy">
+        Allow third-party feed proxy (only if a feed blocks direct reading — this sends the feed URL to allorigins.win)
+      </label>
+    </div></details>
+
+    <details class="card disclosure"><summary>Search a specific topic or person</summary><div class="disclosure-body"><div class="row"><input id="newsSearchInput" placeholder="A name, an idea, a very specific obsession…" aria-label="Search news"><button id="newsSearchBtn">Open news search ↗</button></div></div></details>
+    <div id="newsOut"></div>
+  </section>
+  <section id="tab-stuff" class="tab">
+    <div class="page-heading"><p class="eyebrow">The bigger picture</p><h1>Your stuff, together.</h1><p class="muted">Projects, loose ends, and the things worth remembering.</p></div>
     <div class="card">
-      <h3>Follow your curiosity</h3>
-      <p class="muted">Based on the public topics you choose in Settings, plus your feeds. Your private conversations stay out of news searches.</p>
+      <h3>Goals</h3>
+      <p class="muted">Tell Coach about your goals, deadlines, and milestones in chat. It keeps the longer view so you can focus on today.</p>
       <div class="row">
-        <input id="newsSearchInput" placeholder="Search Hacker News (opens a new tab)" aria-label="Search news">
-        <button id="newsSearchBtn">Search</button>
+        <input id="goalTitle" aria-label="New goal" placeholder="e.g. Launch pilot with [Company]">
+        <button id="addGoal" class="primary">Add</button>
+      </div>
+      <ul id="goalList" class="list"></ul>
+    </div>
+
+    <details class="card disclosure">
+      <summary>Everything Coach is keeping track of</summary>
+      <div class="disclosure-body"><p class="muted">Unfinished commitments stay here across days. Coach brings forward only what needs attention today.</p><ul id="backlogList" class="list"></ul></div>
+    </details>
+
+    <div class="card">
+      <h3>The things worth remembering</h3>
+      <p class="muted">People, preferences, and decisions. Tell Coach when something changes; it replaces the old memory. You can also forget a memory here.</p>
+      <ul id="factList" class="list"></ul>
+      <div class="row">
+        <input id="factInput" aria-label="New memory" placeholder="e.g. Pilot contact is Sarah">
+        <button id="addFact">Add</button>
       </div>
     </div>
-    <div id="newsOut"></div>
+
+    <div class="card">
+      <h3>The person behind the plans</h3>
+      <p class="muted">What’s going on in your world? What do you want Coach to understand?</p>
+      <textarea id="profile" rows="4" aria-label="About you" placeholder="My partner and I are starting a software company. We're building … Our north star is … Biggest constraint right now is …"></textarea>
+      <button id="saveProfile">Save context</button>
+    </div>
+
+    <details class="card disclosure">
+      <summary>Search all history</summary>
+      <div class="disclosure-body">
+        <div class="row"><input id="searchInput" aria-label="Search conversation history" placeholder="Search your conversations…"><button id="searchBtn" class="primary">Search</button></div>
+        <div id="searchOut" class="search-out"></div>
+      </div>
+    </details>
+
+
+  </section>
+  <section id="tab-people" class="tab">
+    <div class="page-heading"><p class="eyebrow">The imaginary group chat</p><h1>Pull up a chair.</h1><p class="muted">Try an idea through someone else’s lens.</p></div>
+    <div class="card"><label for="personSelect">Your people</label><select id="personSelect"></select>
+      <details id="personEditor" class="person-editor"><summary>Add or edit a person</summary><label>Name<input id="personName" maxlength="120" placeholder="Someone whose work interests you"></label><label>The perspective you want<textarea id="personNotes" rows="3" maxlength="4000" placeholder="What you like about their work, or the kind of feedback you want. These are your notes, not verified facts."></textarea></label><div class="row"><button id="savePerson" class="primary">Save person</button><button id="removePerson">Remove person &amp; chat</button></div><p class="muted">Saved names also inform your next web roundup. Choose “Add someone…” to start a new persona.</p></details>
+    </div>
+    <div class="persona-notice"><span class="pill">Make-believe, clearly labeled</span><p>AI roleplay inspired by public work and your notes. These are not the real people, their actual opinions, or endorsed assistants. No live knowledge or private access.</p></div>
+    <h2 id="personaLabel" class="lounge-title"></h2><div id="personaChat" class="chat" role="log" aria-label="Fictional conversation" aria-live="polite"></div>
+    <div class="card persona-composer"><label for="personaInput">Talk it through</label><textarea id="personaInput" rows="3" placeholder="Here’s my idea. Where would you push back?"></textarea><div class="row"><button id="personaSend" class="primary">Send</button><span id="personaStatus" class="muted" role="status"></span></div><p class="muted small">Each person has a separate chat. Only its latest 40 messages and your inspiration notes are sent; your Coach memories and tasks stay out.</p></div>
   </section>
 
   <!-- ======= SETTINGS ======= -->
   <section id="tab-settings" class="tab">
-    <div class="page-heading"><p class="eyebrow">Make yourself at home</p><h1>Your Coach, your way.</h1><p class="muted">A few preferences. A better fit.</p></div>
+    <div class="page-heading"><p class="eyebrow">Make it yours</p><h1>Tune the vibe.</h1><p class="muted">Your voice, your context, your call.</p></div>
+    <div class="card prompt-card"><span class="eyebrow">The master prompt</span><h2>How should we talk?</h2><p class="muted">This is the personality for your everyday chat. Edit anything. It takes effect on the next reply.</p><label class="sr-only" for="masterPrompt">Master prompt</label><textarea id="masterPrompt" rows="6" maxlength="12000"></textarea><div class="row"><button id="saveMasterPrompt" class="primary">Save prompt</button><button id="resetMasterPrompt">Restore default</button></div><details class="section-gap"><summary>App mechanics</summary><p class="muted">A few separate instructions explain saving, memory, and daily planning. Your prompt controls the personality. The Lounge uses its own fictional-roleplay instructions.</p><pre id="promptPreview"></pre></details></div>
     <div class="card">
       <p class="eyebrow">Start here</p>
       <h2>Connect your coach</h2>
@@ -91,37 +155,11 @@
     </div>
 
     <div class="card">
-      <h3>The person behind the plans</h3>
-      <p class="muted">What’s going on in your world? What do you want Coach to understand?</p>
-      <textarea id="profile" rows="4" aria-label="About you" placeholder="My partner and I are starting a software company. We're building … Our north star is … Biggest constraint right now is …"></textarea>
-      <button id="saveProfile">Save context</button>
-    </div>
-
-    <div class="card">
-      <h3>A voice that feels like you</h3>
-      <p class="muted">Warm, playful, and honest by default. Add what makes it click for you.</p>
+      <h3>Extra voice preferences</h3>
+      <p class="muted">Optional preferences from your previous setup. These supplement the master prompt.</p>
       <label for="voice">Your preferences</label>
       <textarea id="voice" rows="3" placeholder="More humor, less pep talk. Be gentle when I’m overwhelmed. Call me Taylor."></textarea>
       <button id="saveVoice">Save preferences</button>
-    </div>
-
-    <div class="card">
-      <h3>Goals</h3>
-      <div class="row">
-        <input id="goalTitle" aria-label="New goal" placeholder="e.g. Launch pilot with [Company]">
-        <button id="addGoal" class="primary">Add</button>
-      </div>
-      <ul id="goalList" class="list"></ul>
-    </div>
-
-    <div class="card">
-      <h3>The things worth remembering</h3>
-      <p class="muted">People, preferences, and commitments. Remove anything that no longer fits.</p>
-      <ul id="factList" class="list"></ul>
-      <div class="row">
-        <input id="factInput" aria-label="New memory" placeholder="e.g. Pilot contact is Sarah">
-        <button id="addFact">Add</button>
-      </div>
     </div>
 
     <div class="card">
@@ -133,41 +171,16 @@
       <p id="embedStatus" class="muted" role="status"></p>
     </div>
 
-    <div class="card">
-      <h3>News feeds</h3>
-      <label>What are you curious about? <span class="muted">(up to six topics, comma-separated)</span><input id="newsInterests" placeholder="artificial intelligence, software, startups, design"></label>
-      <label>Less of this <span class="muted">(headline words to hide, comma-separated)</span><input id="excludedNews" placeholder="crypto, politics"></label>
-      <label for="readingTaste">What makes a good read for you?</label>
-      <textarea id="readingTaste" rows="3" placeholder="Practical ideas I can use, thoughtful design, and founder lessons. Skip the hype."></textarea>
-      <label class="check"><input id="curateNews" type="checkbox">Let Coach pick the strongest reads</label>
-      <p class="muted">With a connected AI key, Coach selects up to eight real headlines and explains the picks. This sends headlines and your reading preferences to Gemini; your private chats and goals stay out.</p>
-      <button id="saveNewsPreferences">Save reading interests</button>
-      <p class="muted">One per line: <code>Name | https://feed-url</code>. Read directly from the source.</p>
-      <textarea id="feeds" rows="4" aria-label="RSS feeds" placeholder="Stratechery | https://stratechery.com/feed/"></textarea>
-      <button id="saveFeeds">Save feeds</button>
-      <label class="check">
-        <input type="checkbox" id="allowProxy">
-        Allow third-party feed proxy (only if a feed blocks direct reading — this sends the feed URL to allorigins.win)
-      </label>
+    <details class="card disclosure">
+      <summary>Conversation memory</summary>
+      <div class="disclosure-body"><p id="memoryHealth" class="muted" role="status"></p><button id="retryMemory" hidden>Retry memory maintenance</button><pre id="summaryPreview"></pre></div>
+    </details>
+
+    <div class="card context-card"><span class="eyebrow">A clean slate, your way</span><h2>What should stay?</h2><p id="contextCounts" class="muted"></p>
+      <label>Reset scope<select id="contextPreset"><option value="selected">Choose what to delete</option><option value="all">All personal context — keep my settings</option></select></label>
+      <div class="context-options"><label class="check"><input id="clearHistory" type="checkbox">Chat history and linked saved records</label><label class="check"><input id="clearMemories" type="checkbox">All saved memories (including retired versions)</label><label class="check"><input id="clearProjects" type="checkbox">Goals and commitments</label><label class="check"><input id="clearProfile" type="checkbox">About you</label><label class="check"><input id="clearPersonas" type="checkbox">All fictional chats</label></div>
+      <div class="row"><label>Chat history from<input id="clearFrom" type="date"></label><label>Through<input id="clearTo" type="date"></label></div><p class="muted">Dates apply only to chat history. Leave them blank for all dates. Deleting saved memories alone leaves any mentions in your conversations; select chat history too if you want those removed.</p><p class="muted">Every deletion clears episode summaries, search indexes, today’s focus, and local recovery snapshots, and disconnects folder backups. Previously exported files are not deleted. Your API key, prompt, reading mix, and followed people stay.</p><button id="clearContext" class="danger">Delete selected context…</button>
     </div>
-
-    <details class="card disclosure">
-      <summary>Long-term summary</summary>
-      <div class="disclosure-body"><pre id="summaryPreview"></pre></div>
-    </details>
-
-    <details class="card disclosure">
-      <summary>Search all history</summary>
-      <div class="disclosure-body">
-        <div class="row"><input id="searchInput" aria-label="Search conversation history" placeholder="Search a year of conversations…"><button id="searchBtn" class="primary">Search</button></div>
-        <div id="searchOut" class="search-out"></div>
-      </div>
-    </details>
-
-    <details class="card disclosure">
-      <summary>Master prompt</summary>
-      <div class="disclosure-body"><pre id="promptPreview"></pre></div>
-    </details>
 
     <details class="card disclosure">
       <summary>Data</summary>
@@ -180,6 +193,11 @@
         </div>
         <label class="check"><input id="exportKey" type="checkbox">Include API key in backup (keep the file private)</label>
         <p class="muted">Backups include your conversations and memories. Your API key stays out unless you choose to include it.</p>
+        <p id="backupStatus" class="muted" role="status"></p>
+        <button id="connectBackupFolder">Connect automatic backup folder</button>
+        <p class="muted">Folder backups need a browser that supports choosing a writable folder. Automatic recovery snapshots keep the last seven active days in this browser; independent exports or folder backups protect against browser data deletion.</p>
+        <label>Recovery snapshot<select id="recoverySnapshot"></select></label>
+        <button id="restoreSnapshot">Restore snapshot</button>
       </div>
     </details>
   </section>
@@ -188,7 +206,7 @@
 <!-- ======= COMPOSER (home only) ======= -->
 <div id="composer" class="composer">
   <div class="composer-inner">
-    <textarea id="chatInput" rows="1" placeholder="Okay, here’s the thing…" aria-label="Message Coach" autocomplete="off"></textarea>
+    <textarea id="chatInput" rows="1" placeholder="So, here’s the thing…" aria-label="Message Coach" autocomplete="off"></textarea>
     <button id="sendChat" class="primary" aria-label="Send">↑</button>
   </div>
 </div>
@@ -199,14 +217,12 @@
     <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.5 9.5 0 0 1-3.3-.6L3 21l1.7-4.6A8.2 8.2 0 0 1 3 11.5a8.4 8.4 0 0 1 9-8.4 8.4 8.4 0 0 1 9 8.4z"/></svg>
     Chat
   </button>
-  <button data-tab="news" aria-label="News">
+  <button data-tab="news" aria-label="Reads">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
-    News
+    Reads
   </button>
-  <button data-tab="settings" aria-label="Settings">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/></svg>
-    Settings
-  </button>
+  <button data-tab="stuff" aria-label="My stuff"><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v11H3zM3 7V4h7l2 3"/></svg>My stuff</button>
+  <button data-tab="people" aria-label="Lounge"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 4v3"/></svg>Lounge</button>
 </nav>
 
 <div id="toast" class="toast" role="status"></div>
